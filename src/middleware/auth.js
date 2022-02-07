@@ -11,6 +11,7 @@ const auth = async (req, res, next) => {
       throw new Error() // trigger catch
     }
 
+    req.token = token
     req.user = user // allow to send user to handler / permit handler to access user, no need to search again in route handler
     next()
   } catch (e) {
