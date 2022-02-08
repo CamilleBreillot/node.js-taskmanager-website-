@@ -6,7 +6,7 @@ const sendWelcomeEmail = (email, name) => {
   sgMail.send( {
     to: email,
     from: 'camille.breillot@gmail.com',
-    subject: 'Thanks for joining us!',
+    subject: 'Thanks for joining us!!',
     text: `Welcome to the app, ${name}. Let me know how you get along with the app.`
   })
 }
