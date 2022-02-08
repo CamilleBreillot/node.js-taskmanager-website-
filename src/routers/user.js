@@ -1,8 +1,9 @@
 const express = require('express')
-const { update } = require('../models/user')
+const multer = require('multer')
+const sharp = require('sharp')
 const User = require('../models/user')
 const auth = require('../middleware/auth')
-const multer = require('multer')
+const { sendWelcomeEmail, sendCancellationEmail } = require('../emails/account') // destructuring
 const router = new express.Router()
 
 
@@ -11,6 +12,7 @@ router.post('/users', async (req, res) => {
 
   try {
     await user.save()
+    sendWelcomeEmail(user.email, user.name)
     const token = await user.generateAuthToken()
     res.status(201).send( { user, token })
   } catch (e) {
@@ -77,6 +79,7 @@ router.patch('/users/me', auth, async (req, res) => {
 router.delete('/users/me', auth, async (req, res) => {
   try {
     await req.user.remove()// remove method on mongoose document. req.user possible because access with auth added to method as argument
+    sendCancellationEmail(req.user.email, req.user.name)
     res.send(req.user)
   } catch (e) {
     res.status(500).send()
@@ -96,7 +99,8 @@ const upload = multer({
 })
 
 router.post('/users/me/avatar', auth, upload.single('avatar'), async (req, res) => {
-  req.user.avatar = req.file.buffer // possible because no dest option in multer() function above
+  const buffer = await sharp(req.file.buffer).png().resize({ width: 250, height: 250 }).toBuffer()
+  req.user.avatar = buffer // possible because no dest option in multer() function above
   await req.user.save()
   res.send()
 }, (error, req, res, next) => { // let express know it is function setup to handle any unaught error from melter
@@ -117,7 +121,7 @@ router.get('/users/:id/avatar', async (req, res) => {
       throw new Error()
     }
 
-    res.set('Content-type', 'image/jpg') // allow to set response headers on the response object. Express
+    res.set('Content-type', 'image/png') // allow to set response headers on the response object. Express // png because always convert thanks to sharp above
     res.send(user.avatar)
   } catch (e) {
 
