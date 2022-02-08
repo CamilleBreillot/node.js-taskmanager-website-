@@ -19,21 +19,29 @@ router.post('/tasks', auth, async (req, res) => {
 
 // GET /tasks?completed=true
 // GET /tasks?limit=10&skip=10 (getting the second 10 if skip=10, if =0 first 10)
-// limit skip
+// GET /tasks?sortBy=createdAt:desc (or _asc)
 router.get('/tasks', auth, async (req, res) => {
   try {
     // const tasks = await Task.find({ owner: req.user._id }) / other option
     const match = {}
+    const sort = {}
 
     if (req.query.completed) {
       match.completed = req.query.completed === 'true'
     }
+
+    if (req.query.sortBy) {
+      const parts = req.query.sortBy.split(':')
+      sort[parts[0]] = parts[1] === 'desc' ? -1 : 1 // because we don't know which value they will sort by : created at, name etc
+    }
+
     await req.user.populate({
       path: 'tasks',
       match,
       options: {
         limit: parseInt(req.query.limit),// because in query always a string
-        skip: parseInt(req.query.skip)
+        skip: parseInt(req.query.skip),
+        sort
       }
     } )
     res.send(req.user.tasks)
